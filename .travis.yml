@@ -1,0 +1,26 @@
+sudo: required
+language: generic
+services:
+  - docker
+
+# Build test version of react project
+before_install:
+  - docker build -t rodriguesnavil/react-test -f ./client/Dockerfile.dev ./client
+
+# Run npm test for the react project
+script:
+- docker run -e CI=true rodriguesnavil/react-test npm test
+
+# Build production images
+after_success:
+  - docker build -t rodriguesnavil/multi-client ./client
+  - docker build -t rodriguesnavil/multi-nginx ./nginx
+  - docker build -t rodriguesnavil/multi-server ./server
+  - docker build -t rodriguesnavil/multi-worker ./worker
+  # login to docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Push prod images to docker hub
+  - docker push multi-client
+  - docker push multi-nginx
+  - docker push multi-server
+  - docker push multi-worker
